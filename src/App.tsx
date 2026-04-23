@@ -126,11 +126,34 @@ export default function App(): JSX.Element {
     )
   }
 
+  const callBackend = async () => {
+    // Get the current session to extract the access token
+    const { data: { session } } = await supabase.auth.getSession()
+
+    if (!session) {
+      alert('Not logged in')
+      return
+    }
+
+    const response = await fetch('https://fantastic-fishstick-g46wxxjr7pq29gvq-9000.app.github.dev/api/protected', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+    })
+
+    const data = await response.json()
+    console.log(data)
+  }
+
   if (claims) {
     return (
       <div>
         <h1>Welcome!</h1>
         <p>You are logged in as: {claims.email}</p>
+        <button onClick={callBackend}>Call Protected Backend Route</button>
+
         <button onClick={handleLogout}>Sign Out</button>
       </div>
     )
