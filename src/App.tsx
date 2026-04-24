@@ -135,7 +135,7 @@ export default function App(): JSX.Element {
       return
     }
 
-    const response = await fetch('https://fantastic-fishstick-g46wxxjr7pq29gvq-9000.app.github.dev/api/protected', {
+    const response = await fetch('http://localhost:9000/api/protected', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${session.access_token}`,
