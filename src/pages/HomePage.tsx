@@ -6,6 +6,7 @@ import type { AppOutletContext } from '../App'
 
 export default function HomePage(): JSX.Element {
   const [loading, setLoading] = useState<boolean>(false)
+  const [googleLoading, setGoogleLoading] = useState<boolean>(false)
   const [email, setEmail] = useState<string>('')
   const { user, setUser, authReady } = useOutletContext<AppOutletContext>()
 
@@ -27,6 +28,22 @@ export default function HomePage(): JSX.Element {
     }
 
     setLoading(false)
+  }
+
+  const handleGoogleLogin = async (): Promise<void> => {
+    setGoogleLoading(true)
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    })
+
+    if (error) {
+      alert(error.message)
+      setGoogleLoading(false)
+    }
   }
 
   const handleLogout = async (): Promise<void> => {
@@ -81,7 +98,11 @@ export default function HomePage(): JSX.Element {
   return (
     <div>
       <h1>Supabase + React</h1>
-      <p>Sign in via magic link with your email below</p>
+      <p>Sign in with Google or use a magic link with your email below.</p>
+      <button type="button" disabled={googleLoading} onClick={handleGoogleLogin}>
+        {googleLoading ? <span>Redirecting...</span> : <span>Continue with Google</span>}
+      </button>
+      <p>Or continue with email</p>
       <form onSubmit={handleLogin}>
         <input
           type="email"

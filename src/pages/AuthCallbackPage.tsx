@@ -3,6 +3,41 @@ import { useNavigate } from 'react-router'
 
 import { supabase } from '../lib/supabase'
 
+const emailOtpTypes = [
+  'signup',
+  'invite',
+  'magiclink',
+  'recovery',
+  'email_change',
+  'email',
+] as const
+
+type EmailOtpType = (typeof emailOtpTypes)[number]
+
+const isEmailOtpType = (type: string | null): type is EmailOtpType => {
+  return emailOtpTypes.some((emailOtpType) => emailOtpType === type)
+}
+
+const codeExchangePromises = new Map<string, Promise<void>>()
+
+const exchangeCodeOnce = (code: string): Promise<void> => {
+  const existingExchange = codeExchangePromises.get(code)
+
+  if (existingExchange) {
+    return existingExchange
+  }
+
+  const exchangePromise = supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+    if (error) {
+      throw error
+    }
+  })
+
+  codeExchangePromises.set(code, exchangePromise)
+
+  return exchangePromise
+}
+
 export default function AuthCallbackPage(): JSX.Element {
   const [verifying, setVerifying] = useState<boolean>(true)
   const [authError, setAuthError] = useState<string | null>(null)
@@ -28,15 +63,11 @@ export default function AuthCallbackPage(): JSX.Element {
         }
 
         if (code) {
-          const { error } = await supabase.auth.exchangeCodeForSession(code)
-
-          if (error) {
-            throw error
-          }
+          await exchangeCodeOnce(code)
         } else if (tokenHash) {
           const { error } = await supabase.auth.verifyOtp({
             token_hash: tokenHash,
-            type: (type as any) || 'email',
+            type: isEmailOtpType(type) ? type : 'email',
           })
 
           if (error) {
@@ -87,7 +118,7 @@ export default function AuthCallbackPage(): JSX.Element {
     return (
       <div>
         <h1>Authentication</h1>
-        <p>Confirming your magic link...</p>
+        <p>Confirming your sign in...</p>
         <p>Loading...</p>
       </div>
     )
